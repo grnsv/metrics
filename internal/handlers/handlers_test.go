@@ -11,6 +11,9 @@ import (
 )
 
 func TestHandleUpdateMetric(t *testing.T) {
+	ts := httptest.NewServer(NewRouter())
+	defer ts.Close()
+
 	type req struct {
 		method      string
 		url         string
@@ -61,21 +64,6 @@ func TestHandleUpdateMetric(t *testing.T) {
 			},
 			want{
 				statusCode:  http.StatusMethodNotAllowed,
-				body:        "Method not allowed\n",
-				contentType: "text/plain",
-			},
-		},
-		{
-			"invalid content type",
-			req{
-				method:      http.MethodPost,
-				url:         "/update/gauge/Alloc/123.45",
-				contentType: "application/json",
-			},
-			want{
-				statusCode:  http.StatusBadRequest,
-				body:        "Invalid content type\n",
-				contentType: "text/plain",
 			},
 		},
 		{
@@ -87,7 +75,7 @@ func TestHandleUpdateMetric(t *testing.T) {
 			},
 			want{
 				statusCode:  http.StatusNotFound,
-				body:        "Invalid path\n",
+				body:        "404 page not found\n",
 				contentType: "text/plain",
 			},
 		},
@@ -147,19 +135,21 @@ func TestHandleUpdateMetric(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			request := httptest.NewRequest(tt.req.method, tt.req.url, nil)
-			request.Header.Add("Content-Type", tt.req.contentType)
-			w := httptest.NewRecorder()
-			HandleUpdateMetric(w, request)
+			request, err := http.NewRequest(tt.req.method, ts.URL + tt.req.url, nil)
+			require.NoError(t, err, tt.name)
 
-			res := w.Result()
-			assert.Equal(t, tt.want.statusCode, res.StatusCode)
+			request.Header.Add("Content-Type", tt.req.contentType)
+
+			res, err := ts.Client().Do(request)
+			require.NoError(t, err, tt.name)
+
+			assert.Equal(t, tt.want.statusCode, res.StatusCode, tt.name)
 			defer res.Body.Close()
 			resBody, err := io.ReadAll(res.Body)
 
-			require.NoError(t, err)
-			assert.Equal(t, tt.want.body, string(resBody))
-			assert.Contains(t, res.Header.Get("Content-Type"), tt.want.contentType)
+			require.NoError(t, err, tt.name)
+			assert.Equal(t, tt.want.body, string(resBody), tt.name)
+			assert.Contains(t, res.Header.Get("Content-Type"), tt.want.contentType, tt.name)
 		})
 	}
 }

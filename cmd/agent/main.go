@@ -4,10 +4,10 @@ import (
 	"fmt"
 	"log"
 	"math/rand"
-	"net/http"
 	"runtime"
 	"time"
 
+	"github.com/go-resty/resty/v2"
 	"github.com/grnsv/metrics/internal/storage"
 )
 
@@ -20,6 +20,7 @@ const (
 var (
 	metrics   []storage.Metric
 	pollCount int64
+	client    = resty.New()
 )
 
 func collectMetrics() {
@@ -64,22 +65,15 @@ func collectMetrics() {
 func sendMetrics() {
 	for _, metric := range metrics {
 		url := fmt.Sprintf("%s/update/%s/%s/%v", serverURL, metric.GetType(), metric.GetName(), metric.GetValue())
-		req, err := http.NewRequest(http.MethodPost, url, nil)
-		if err != nil {
-			log.Printf("Error creating request: %v", err)
-			continue
-		}
-		req.Header.Set("Content-Type", "text/plain")
-
-		resp, err := http.DefaultClient.Do(req)
+		_, err := client.R().
+			SetHeader("Content-Type", "text/plain").
+			Post(url)
 		if err != nil {
 			log.Printf("Error sending request: %v", err)
-			continue
 		}
-		resp.Body.Close()
 	}
 
-	clear(metrics)
+	metrics = metrics[:0]
 }
 
 func main() {
