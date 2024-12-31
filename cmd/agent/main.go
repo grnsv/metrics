@@ -11,12 +11,6 @@ import (
 	"github.com/grnsv/metrics/internal/storage"
 )
 
-const (
-	serverURL      string        = "http://localhost:8080"
-	pollInterval   time.Duration = 2 * time.Second
-	reportInterval time.Duration = 10 * time.Second
-)
-
 var (
 	metrics   []storage.Metric
 	pollCount int64
@@ -64,7 +58,8 @@ func collectMetrics() {
 
 func sendMetrics() {
 	for _, metric := range metrics {
-		url := fmt.Sprintf("%s/update/%s/%s/%v", serverURL, metric.GetType(), metric.GetName(), metric.GetValue())
+		url := fmt.Sprintf("http://%s/update/%s/%s/%v",
+			serverURL.String(), metric.GetType(), metric.GetName(), metric.GetValue())
 		_, err := client.R().
 			SetHeader("Content-Type", "text/plain").
 			Post(url)
@@ -77,15 +72,16 @@ func sendMetrics() {
 }
 
 func main() {
+	ParseFlags()
 	go func() {
 		for {
 			collectMetrics()
-			time.Sleep(pollInterval)
+			time.Sleep(pollInterval.Duration)
 		}
 	}()
 
 	for {
 		sendMetrics()
-		time.Sleep(reportInterval)
+		time.Sleep(reportInterval.Duration)
 	}
 }
