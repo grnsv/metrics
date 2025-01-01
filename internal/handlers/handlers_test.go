@@ -63,7 +63,7 @@ func TestHandleUpdateMetric(t *testing.T) {
 				contentType: "text/plain",
 			},
 			want{
-				statusCode:  http.StatusMethodNotAllowed,
+				statusCode: http.StatusMethodNotAllowed,
 			},
 		},
 		{
@@ -135,7 +135,7 @@ func TestHandleUpdateMetric(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			request, err := http.NewRequest(tt.req.method, ts.URL + tt.req.url, nil)
+			request, err := http.NewRequest(tt.req.method, ts.URL+tt.req.url, nil)
 			require.NoError(t, err, tt.name)
 
 			request.Header.Add("Content-Type", tt.req.contentType)

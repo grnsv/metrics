@@ -59,7 +59,7 @@ func collectMetrics() {
 func sendMetrics() {
 	for _, metric := range metrics {
 		url := fmt.Sprintf("http://%s/update/%s/%s/%v",
-			serverURL.String(), metric.GetType(), metric.GetName(), metric.GetValue())
+			config.ServerURL.String(), metric.GetType(), metric.GetName(), metric.GetValue())
 		_, err := client.R().
 			SetHeader("Content-Type", "text/plain").
 			Post(url)
@@ -72,16 +72,18 @@ func sendMetrics() {
 }
 
 func main() {
-	ParseFlags()
+	if err := parseVars(); err != nil {
+		log.Fatalf("Agent failed: %v", err)
+	}
 	go func() {
 		for {
 			collectMetrics()
-			time.Sleep(pollInterval.Duration)
+			time.Sleep(config.PollInterval.Duration)
 		}
 	}()
 
 	for {
 		sendMetrics()
-		time.Sleep(reportInterval.Duration)
+		time.Sleep(config.ReportInterval.Duration)
 	}
 }

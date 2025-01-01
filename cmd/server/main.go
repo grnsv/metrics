@@ -8,9 +8,11 @@ import (
 )
 
 func main() {
-	ParseFlags()
+	if err := parseVars(); err != nil {
+		log.Fatalf("Server failed: %v", err)
+	}
 	r := handlers.NewRouter()
-	if err := http.ListenAndServe(address.String(), r); err != nil {
+	if err := http.ListenAndServe(config.Address.String(), r); err != nil {
 		log.Fatalf("Server failed: %v", err)
 	}
 }

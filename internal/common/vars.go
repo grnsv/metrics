@@ -30,6 +30,10 @@ func (a *NetAddress) Set(s string) error {
 	return nil
 }
 
+func (a *NetAddress) UnmarshalText(text []byte) error {
+	return a.Set(string(text))
+}
+
 type Time struct {
 	Duration time.Duration
 }
@@ -45,4 +49,8 @@ func (t *Time) Set(s string) error {
 	}
 	t.Duration = time.Duration(duration) * time.Second
 	return nil
+}
+
+func (t *Time) UnmarshalText(text []byte) error {
+	return t.Set(string(text))
 }
